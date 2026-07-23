@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel de Briefings — Apollo Gestão Digital</title>
+<style>
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+:root {
+  color-scheme: light;
+  --page:   #E9EAEC;
+  --paper:  #FFFFFF;
+  --ink:    #14151A;
+  --ink-2:  #4B4D56;
+  --muted:  #8B8E98;
+  --line:   rgba(20,21,26,.13);
+  --line-2: rgba(20,21,26,.07);
+  --grad:   linear-gradient(95deg, #FFB238 0%, #F2701D 55%, #E8460C 100%);
+  --accent: #E8590C;
+  --err:    #D5484A;
+  --ok:     #0E8A5F;
+  --f-sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --f-mono: ui-monospace, "Cascadia Code", "SF Mono", "Segoe UI Mono", Menlo, Consolas, monospace;
+}
+
+body {
+  margin: 0; background: var(--page); color: var(--ink-2);
+  font-family: var(--f-sans); line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  padding: clamp(20px, 5vw, 56px) 16px;
+}
+
+.wrap { max-width: 640px; margin: 0 auto; }
+.head { display: flex; align-items: center; gap: 10px; margin-bottom: 26px; }
+.head img { height: 26px; width: auto; display: block; }
+.head span { font-family: var(--f-mono); font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+
+.card { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 26px 26px 28px; box-shadow: 0 24px 60px -30px rgba(20,21,26,.28); margin-bottom: 20px; }
+.card h1 { margin: 0 0 4px; font-size: 1.1rem; color: var(--ink); font-weight: 700; }
+.card h2 { margin: 0 0 14px; font-size: .95rem; color: var(--ink); font-weight: 650; }
+.hint { margin: 0 0 20px; font-size: .82rem; color: var(--muted); line-height: 1.5; }
+
+.f { display: grid; gap: 5px; margin-bottom: 14px; }
+.f label { font-family: var(--f-mono); font-size: .6rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.f input { font: inherit; font-size: .92rem; color: var(--ink); padding: 11px 13px; border: 1px solid var(--line); border-radius: 9px; background: #FBFCFF; outline: none; transition: border-color .15s ease; width: 100%; }
+.f input:focus { border-color: var(--accent); }
+
+.btn { font: inherit; font-weight: 650; font-size: .92rem; color: #fff; background: var(--accent); border: 0; border-radius: 10px; padding: 12px 18px; cursor: pointer; width: 100%; transition: background .15s ease; }
+.btn:hover { background: #C94A0A; }
+.btn:disabled { opacity: .6; cursor: default; }
+.ghost { font: inherit; font-weight: 600; font-size: .82rem; color: var(--ink-2); background: none; border: 1px solid var(--line); border-radius: 8px; padding: 8px 13px; cursor: pointer; white-space: nowrap; }
+.ghost:hover { border-color: var(--accent); }
+
+.err { margin: 10px 0 0; font-size: .8rem; color: var(--err); font-weight: 600; }
+.ok { margin: 10px 0 0; font-size: .8rem; color: var(--ok); font-weight: 600; }
+
+.link-row { display: flex; gap: 8px; margin-top: 14px; }
+.link-row input { flex: 1; font-family: var(--f-mono); font-size: .72rem; color: var(--ink-2); padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; background: #FFFAF5; min-width: 0; }
+
+.list { display: grid; gap: 10px; }
+.item { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; row-gap: 8px; padding: 13px 15px; border: 1px solid var(--line); border-radius: 11px; background: #FFFAF5; }
+.item .who { flex: 1; min-width: 160px; }
+.item .who b { display: block; color: var(--ink); font-weight: 650; font-size: .9rem; }
+.item .who span { display: block; font-family: var(--f-mono); font-size: .62rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-top: 2px; }
+.badge { font-family: var(--f-mono); font-size: .58rem; letter-spacing: .08em; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.badge.respondido { color: var(--ok); border-color: rgba(14,138,95,.35); background: #EDFAF4; }
+.badge.enviado { color: var(--accent); border-color: rgba(232,89,12,.3); background: #FFF3E9; }
+.empty { font-size: .85rem; color: var(--muted); }
+
+.gate { display: flex; align-items: center; justify-content: center; min-height: 70vh; }
+.gate .card { max-width: 360px; width: 100%; }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="wrap gate" id="gate">
+  <div class="card">
+    <h1>Painel de Briefings</h1>
+    <p class="hint">Área restrita — Apollo Gestão Digital.</p>
+    <div class="f"><label for="senhaInput">Senha</label><input type="password" id="senhaInput" placeholder="••••••••"></div>
+    <button class="btn" id="entrarBtn">Entrar</button>
+    <p class="err" id="gateErr"></p>
+  </div>
+</div>
+
+<div class="wrap hidden" id="painel">
+  <div class="head">
+    <img src="apollo-logo.png" alt="Apollo Gestão Digital">
+    <span>Painel de Briefings</span>
+  </div>
+
+  <div class="card">
+    <h1>Gerar novo briefing</h1>
+    <p class="hint">Digite o nome do cliente e gere o link exclusivo para enviar por WhatsApp ou e-mail.</p>
+    <div class="f"><label for="empresaInput">Nome da empresa</label><input type="text" id="empresaInput" placeholder="Ex.: Grupo BrasilServ"></div>
+    <button class="btn" id="gerarBtn">Gerar link</button>
+    <p class="err" id="gerarErr"></p>
+    <div class="link-row hidden" id="linkRow">
+      <input type="text" id="linkOutput" readonly>
+      <button class="ghost" id="copiarNovoBtn">Copiar</button>
+    </div>
+    <p class="ok hidden" id="copiadoNovoMsg">Link copiado ✓</p>
+  </div>
+
+  <div class="card">
+    <h2>Briefings enviados</h2>
+    <div class="list" id="lista"><p class="empty">Carregando...</p></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var ENDPOINT = 'https://script.google.com/macros/s/AKfycbwdljBSI93L2Q6C2XYU07yQnDj0VQm52Mu2KeNNFCpCaHCptr2dvU7bX4_E9hBOaamb/exec';
+  var senha = sessionStorage.getItem('apolloPainelSenha') || '';
+
+  function linkDoSlug(slug) {
+    return new URL('index.html?c=' + encodeURIComponent(slug), location.href).href;
+  }
+  function fmtData(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function mostrarPainel() {
+    document.getElementById('gate').classList.add('hidden');
+    document.getElementById('painel').classList.remove('hidden');
+    carregarLista();
+  }
+
+  function entrar() {
+    var tentativa = document.getElementById('senhaInput').value;
+    var errEl = document.getElementById('gateErr');
+    errEl.textContent = '';
+    fetch(ENDPOINT + '?action=listar&senha=' + encodeURIComponent(tentativa))
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data && data.ok) {
+          senha = tentativa;
+          sessionStorage.setItem('apolloPainelSenha', senha);
+          mostrarPainel();
+        } else {
+          errEl.textContent = 'Senha incorreta.';
+        }
+      })
+      .catch(function () { errEl.textContent = 'Não foi possível conectar. Tente novamente.'; });
+  }
+
+  document.getElementById('entrarBtn').addEventListener('click', entrar);
+  document.getElementById('senhaInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') entrar(); });
+
+  function gerarLink() {
+    var empresa = document.getElementById('empresaInput').value.trim();
+    var errEl = document.getElementById('gerarErr');
+    var btn = document.getElementById('gerarBtn');
+    errEl.textContent = '';
+    if (!empresa) { errEl.textContent = 'Digite o nome da empresa.'; return; }
+    btn.disabled = true;
+    btn.textContent = 'Gerando...';
+    fetch(ENDPOINT + '?action=criar&senha=' + encodeURIComponent(senha) + '&empresa=' + encodeURIComponent(empresa))
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        btn.disabled = false;
+        btn.textContent = 'Gerar link';
+        if (!data || !data.ok) { errEl.textContent = 'Não foi possível gerar o link.'; return; }
+        var link = linkDoSlug(data.slug);
+        var out = document.getElementById('linkOutput');
+        out.value = link;
+        document.getElementById('linkRow').classList.remove('hidden');
+        document.getElementById('empresaInput').value = '';
+        carregarLista();
+      })
+      .catch(function () {
+        btn.disabled = false;
+        btn.textContent = 'Gerar link';
+        errEl.textContent = 'Não foi possível conectar. Tente novamente.';
+      });
+  }
+  document.getElementById('gerarBtn').addEventListener('click', gerarLink);
+  document.getElementById('empresaInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') gerarLink(); });
+
+  function copiar(texto, msgEl) {
+    navigator.clipboard.writeText(texto).then(function () {
+      if (msgEl) { msgEl.classList.remove('hidden'); setTimeout(function () { msgEl.classList.add('hidden'); }, 2200); }
+    });
+  }
+  document.getElementById('copiarNovoBtn').addEventListener('click', function () {
+    copiar(document.getElementById('linkOutput').value, document.getElementById('copiadoNovoMsg'));
+  });
+
+  function carregarLista() {
+    var el = document.getElementById('lista');
+    fetch(ENDPOINT + '?action=listar&senha=' + encodeURIComponent(senha))
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data || !data.ok) { el.innerHTML = '<p class="empty">Não foi possível carregar.</p>'; return; }
+        if (!data.convites.length) { el.innerHTML = '<p class="empty">Nenhum briefing gerado ainda.</p>'; return; }
+        el.innerHTML = data.convites.map(function (c) {
+          var respondido = c.status === 'Respondido';
+          return '<div class="item">' +
+            '<div class="who"><b>' + escapeHtml(c.empresa) + '</b><span>' + fmtData(c.criadoEm) + '</span></div>' +
+            '<span class="badge ' + (respondido ? 'respondido' : 'enviado') + '">' + escapeHtml(c.status) + '</span>' +
+            '<button class="ghost" onclick="app.copiarLink(\'' + c.slug + '\', this)">Copiar link</button>' +
+            '</div>';
+        }).join('');
+      })
+      .catch(function () { el.innerHTML = '<p class="empty">Não foi possível carregar.</p>'; });
+  }
+
+  function escapeHtml(s) {
+    return (s || '').toString().replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  window.app = {
+    copiarLink: function (slug, btn) {
+      navigator.clipboard.writeText(linkDoSlug(slug)).then(function () {
+        var original = btn.textContent;
+        btn.textContent = 'Copiado ✓';
+        setTimeout(function () { btn.textContent = original; }, 1800);
+      });
+    }
+  };
+
+  if (senha) {
+    fetch(ENDPOINT + '?action=listar&senha=' + encodeURIComponent(senha))
+      .then(function (r) { return r.json(); })
+      .then(function (data) { if (data && data.ok) mostrarPainel(); });
+  }
+})();
+</script>
+</body>
+</html>

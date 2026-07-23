@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Briefing de Projeto — Apollo Gestão Digital</title>
+<style>
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+:root {
+  color-scheme: light;
+
+  --page:   #E9EAEC;
+  --paper:  #FFFFFF;
+  --ink:    #14151A;
+  --ink-2:  #4B4D56;
+  --muted:  #8B8E98;
+  --line:   rgba(20,21,26,.13);
+  --line-2: rgba(20,21,26,.07);
+
+  --grad:   linear-gradient(95deg, #FFB238 0%, #F2701D 55%, #E8460C 100%);
+  --accent: #E8590C;
+  --err:    #D5484A;
+
+  --f-sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --f-mono: ui-monospace, "Cascadia Code", "SF Mono", "Segoe UI Mono", Menlo, Consolas, monospace;
+}
+
+body {
+  margin: 0; background: var(--page); color: var(--ink-2);
+  font-family: var(--f-sans); line-height: 1.6;
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+  min-height: 100vh; min-height: 100dvh;
+}
+
+/* ---------- Topo ---------- */
+#topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; padding: 18px clamp(20px, 5vw, 40px) 0; }
+#topbar .logo { height: 26px; width: auto; display: block; }
+#stepCount { font-family: var(--f-mono); font-size: .66rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+
+#progress-wrap { position: fixed; top: 0; left: 0; right: 0; height: 3px; background: var(--line-2); z-index: 11; }
+#progress-fill { height: 100%; width: 0%; background: var(--grad); transition: width .35s cubic-bezier(.2,.7,.2,1); }
+
+/* ---------- Palco ---------- */
+#stage { min-height: 100vh; min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: 90px clamp(20px, 6vw, 40px) 60px; }
+.screen { max-width: 620px; width: 100%; animation: enter .5s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes enter { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+
+.eyebrow { font-family: var(--f-mono); font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 16px; }
+.q { font-weight: 500; color: var(--ink); font-size: clamp(1.35rem, 4vw, 1.9rem); line-height: 1.32; letter-spacing: -.015em; text-wrap: balance; margin: 0 0 8px; }
+.q-hint { margin: 0 0 22px; color: var(--muted); font-size: .88rem; font-style: italic; }
+.q-req { color: var(--accent); }
+
+.g { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* ---------- Campos ---------- */
+.field-wrap { margin-top: 22px; }
+.field { font: inherit; font-size: 1.02rem; color: var(--ink); padding: 15px 17px; border: 1px solid var(--line); border-radius: 11px; background: var(--paper); outline: none; transition: border-color .15s ease, box-shadow .15s ease; width: 100%; }
+.field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,89,12,.1); }
+textarea.field { min-height: 130px; resize: vertical; line-height: 1.55; }
+.err-msg { display: none; margin: 10px 2px 0; font-size: .82rem; color: var(--err); font-weight: 600; }
+.err-msg.show { display: block; }
+
+/* ---------- Tags (múltipla escolha) ---------- */
+.tags { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 22px; }
+.tag-opt { font: inherit; font-size: .86rem; color: var(--ink-2); background: var(--paper); border: 1px solid var(--line); border-radius: 20px; padding: 9px 16px; cursor: pointer; transition: border-color .15s ease, background .15s ease, color .15s ease; }
+.tag-opt:hover { border-color: var(--accent); }
+.tag-opt.picked { border-color: var(--accent); background: #FFF3E9; color: var(--ink); font-weight: 650; }
+
+/* ---------- Upload ---------- */
+.drop { margin-top: 22px; border: 2px dashed var(--line); border-radius: 14px; padding: 36px 20px; text-align: center; cursor: pointer; transition: border-color .15s ease, background .15s ease; }
+.drop:hover, .drop.drag { border-color: var(--accent); background: #FFFAF5; }
+.drop svg { width: 26px; height: 26px; stroke: var(--accent); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; margin-bottom: 10px; }
+.drop b { display: block; color: var(--ink); font-size: .95rem; }
+.drop span { display: block; margin-top: 4px; font-size: .78rem; color: var(--muted); }
+.file-list { margin-top: 14px; display: grid; gap: 8px; }
+.file-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 14px; border: 1px solid var(--line); border-radius: 9px; background: var(--paper); font-size: .84rem; color: var(--ink-2); }
+.file-item b { color: var(--ink); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-item .sz { font-family: var(--f-mono); font-size: .72rem; color: var(--muted); flex: none; }
+.file-item .rm { flex: none; width: 22px; height: 22px; border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 1rem; line-height: 1; border-radius: 6px; }
+.file-item .rm:hover { color: var(--err); background: #FDF0EF; }
+
+/* ---------- Botões ---------- */
+.actions { display: flex; align-items: center; gap: 18px; margin-top: 30px; flex-wrap: wrap; }
+.btn-next { display: inline-flex; align-items: center; gap: 9px; font-weight: 600; font-size: .95rem; color: #fff; background: var(--accent); border: 0; border-radius: 10px; padding: 14px 24px; cursor: pointer; transition: background .18s ease, transform .18s ease; }
+.btn-next:hover { background: #C94A0A; transform: translateY(-1px); }
+.btn-next:disabled { opacity: .55; cursor: default; transform: none; }
+.btn-next svg { width: 16px; height: 16px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.btn-back { font: inherit; font-size: .86rem; font-weight: 600; color: var(--muted); background: none; border: 0; cursor: pointer; padding: 6px 2px; }
+.btn-back:hover { color: var(--ink); }
+.skip { font: inherit; font-size: .82rem; color: var(--muted); background: none; border: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.skip:hover { color: var(--ink-2); }
+
+/* ---------- Telas especiais ---------- */
+.center { text-align: center; }
+.welcome-mark { width: 52px; height: 52px; border-radius: 14px; margin: 0 auto 24px; display: grid; place-items: center; background: #FFF3E9; }
+.welcome-mark svg { width: 26px; height: 26px; stroke: var(--accent); fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.lead { color: var(--ink-2); font-size: 1rem; line-height: 1.65; margin: 0 0 6px; }
+.lead + .lead { margin-top: 14px; }
+
+.spinner { width: 36px; height: 36px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--accent); margin: 0 auto 20px; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.done-mark { width: 60px; height: 60px; border-radius: 50%; margin: 0 auto 22px; display: grid; place-items: center; background: var(--grad); }
+.done-mark svg { width: 28px; height: 28px; stroke: #fff; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+.fail-note { margin-top: 18px; font-size: .82rem; color: var(--muted); }
+
+@media (prefers-reduced-motion: reduce) {
+  .screen { animation: none; }
+  .spinner { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<div id="progress-wrap"><div id="progress-fill"></div></div>
+<div id="topbar">
+  <img class="logo" src="apollo-logo.png" alt="Apollo Gestão Digital">
+  <span id="stepCount"></span>
+</div>
+<main id="stage"><div class="screen" id="screen"></div></main>
+
+<script>
+(function () {
+
+  /* ================= CONFIG ================= */
+  var CONFIG = {
+    // Cole aqui a URL do Web App depois de publicar o Apps Script (ver README.md)
+    endpoint: 'https://script.google.com/macros/s/AKfycbwdljBSI93L2Q6C2XYU07yQnDj0VQm52Mu2KeNNFCpCaHCptr2dvU7bX4_E9hBOaamb/exec',
+    maxFileSizeMB: 15,
+    maxFilesPerField: 5,
+  };
+
+  var PERSONALIDADES = [
+    'Inovadora','Determinada','Forte','Agressiva','Discreta','Delicada','Elegante','Moderna',
+    'Feliz','Alegre','Divertida','Simples','Tradicional','Rústica','Ousada','Imponente',
+    'Chamativa','Profissional','Séria','Calma','Sutil','Diferente','Corajosa','Amorosa',
+    'Romântica','Amigável','Convidativa','Radical','Digital','Antiga','Nostálgica','Persistente',
+    'Arrojada','Sonhadora','Convencional','Complexa','Criativa','Industrial','Promissora',
+    'Deslumbrante','Inteligente','Nobre','Comum','Poderosa','Casual','Famosa','Descolada',
+    'Clássica','Destemida'
+  ];
+
+  /* ================= PERGUNTAS (data-driven) ================= */
+  var BLOCKS = [
+    { name: 'Quem está respondendo', questions: [
+      { id: 'respNome', type: 'text', label: 'Antes de começar, qual é o seu nome?', required: true, placeholder: 'Seu nome' },
+      { id: 'respEmail', type: 'email', label: 'Qual o seu melhor e-mail?', required: true, placeholder: 'voce@empresa.com.br' },
+      { id: 'respWhatsapp', type: 'tel', label: 'E o seu WhatsApp?', required: false, placeholder: '(16) 90000-0000' }
+    ]},
+    { name: 'Sobre a empresa', questions: [
+      { id: 'empresaNome', type: 'text', label: 'Nome da empresa', required: true, placeholder: 'Ex.: Grupo BrasilServ' },
+      { id: 'empresaInicio', type: 'text', label: 'Quando sua empresa começou?', required: true, placeholder: 'Ex.: 2015' },
+      { id: 'empresaAtividade', type: 'textarea', label: 'O que sua empresa faz e o que ela oferece hoje?', required: true },
+      { id: 'empresaProdutos', type: 'textarea', label: 'Quais são hoje os principais produtos ou serviços?', required: true }
+    ]},
+    { name: 'Objetivo do projeto', questions: [
+      { id: 'objetivoPrincipal', type: 'textarea', label: 'Qual é o principal objetivo deste site / landing page?', required: true },
+      { id: 'objetivoSucesso', type: 'textarea', label: 'O que faria você dizer que esse projeto deu certo?', required: false }
+    ]},
+    { name: 'Público', questions: [
+      { id: 'publicoIdeal', type: 'textarea', label: 'Quem é a pessoa ideal que você quer atingir com esse site?', required: true },
+      { id: 'publicoObjecoes', type: 'textarea', label: 'Quais são as principais dúvidas, medos ou objeções desse público antes de comprar ou entrar em contato?', required: false }
+    ]},
+    { name: 'Concorrência e posicionamento', questions: [
+      { id: 'concorrentes', type: 'textarea', label: 'Quais são seus principais concorrentes?', hint: 'Se possível, envie links.', required: true },
+      { id: 'diferenciais', type: 'textarea', label: 'Em que pontos você acredita que sua empresa se destaca em relação a eles?', required: false },
+      { id: 'concorrentesFrente', type: 'textarea', label: 'Em que pontos você sente que seus concorrentes estão à frente hoje?', required: false }
+    ]},
+    { name: 'Comunicação e tom da marca', questions: [
+      { id: 'personalidade', type: 'tags', label: 'Se sua marca fosse uma pessoa, como ela seria?', hint: 'Selecione quantas fizerem sentido.', required: true, options: PERSONALIDADES },
+      { id: 'personalidadeTop3', type: 'text', label: 'De todas essas, cite três que você considera as principais.', required: true },
+      { id: 'linguagemEvitar', type: 'text', label: 'Existe algum tipo de linguagem que você NÃO quer que seja usada no site?', required: false },
+      { id: 'naoQuerVer', type: 'text', label: 'O que você NÃO gostaria de ver no projeto?', required: false }
+    ]},
+    { name: 'Visual e referências', questions: [
+      { id: 'identidadeVisual', type: 'upload', label: 'Você já possui identidade visual (logo, cores, tipografia)?', hint: 'Se sim, envie os arquivos (logo, manual, etc.)', required: false },
+      { id: 'referenciasVisuais', type: 'textarea', label: 'Quais sites, marcas ou referências visuais você gosta?', hint: 'Se possível, envie links.', required: false }
+    ]},
+    { name: 'Conteúdo', questions: [
+      { id: 'conteudoArquivos', type: 'upload', label: 'Você já possui conteúdo de texto, fotos ou outro material que deve ser usado no site?', hint: 'Se sim, envie os arquivos.', required: false }
+    ]},
+    { name: 'Informações finais', questions: [
+      { id: 'infoAdicional', type: 'textarea', label: 'Existe algo importante sobre seu negócio ou sobre este projeto que eu deveria saber e não perguntei?', required: false }
+    ]}
+  ];
+
+  var TOTAL_QUESTIONS = BLOCKS.reduce(function (n, b) { return n + b.questions.length; }, 0);
+
+  /* ================= ESTADO ================= */
+  var state = { stepIndex: 0, answers: { personalidade: [] }, files: {} };
+
+  // link personalizado (?c=slug), gerado no painel.html — identifica pra quem
+  // é esse briefing e permite marcar como "Respondido" na aba Convites
+  var slugParam = new URLSearchParams(location.search).get('c') || '';
+  var conviteInfo = null;
+  if (slugParam) {
+    fetch(CONFIG.endpoint + '?action=info&slug=' + encodeURIComponent(slugParam))
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data && data.ok) {
+          conviteInfo = data;
+          state.answers.empresaNome = data.empresa;
+          if (state.stepIndex === 0) show(0);
+        }
+      })
+      .catch(function () {});
+  }
+
+  function esc(s) {
+    return (s || '').toString().replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function fmtSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  /* ================= MONTAGEM DO FLUXO ================= */
+  var FLOW = [];
+
+  FLOW.push({ progress: null, render: function () {
+    var titulo = conviteInfo
+      ? 'Vamos entender a marca e o negócio da <span class="g">' + esc(conviteInfo.empresa) + '</span>.'
+      : 'Vamos entender sua <span class="g">marca</span> e o seu <span class="g">negócio</span>.';
+    return '<div class="center">' +
+      '<div class="welcome-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L18.5 9.5l-4-4L4 16v4z"/><path d="M13 7l4 4"/></svg></div>' +
+      '<span class="eyebrow">Briefing de projeto</span>' +
+      '<p class="q">' + titulo + '</p>' +
+      '<p class="lead">Este briefing é a base de tudo o que construímos a seguir — quanto mais claro for para você, melhor o resultado final. Não existe resposta errada: responda com sinceridade, do jeito que vier à cabeça.</p>' +
+      '<p class="lead">Leva cerca de 10 minutos. Dá pra parar e voltar depois, se precisar.</p>' +
+      '<div class="actions" style="justify-content:center;"><button class="btn-next" onclick="app.next()">Começar<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>' +
+      '</div>';
+  }});
+
+  var qCounter = 0;
+  BLOCKS.forEach(function (block) {
+    block.questions.forEach(function (q, i) {
+      qCounter++;
+      FLOW.push(questionScreen(q, block.name, qCounter));
+    });
+  });
+
+  FLOW.push({ progress: null, render: function () {
+    return '<div class="center">' +
+      '<span class="eyebrow">Quase lá</span>' +
+      '<p class="q">Tudo pronto para enviar.</p>' +
+      '<p class="lead">Confira se preencheu o que fizer sentido para você e clique abaixo para enviar seu briefing.</p>' +
+      '<div class="actions" style="justify-content:center;" id="submitActions">' +
+        '<button class="btn-back" onclick="app.back()">← Voltar</button>' +
+        '<button class="btn-next" id="submitBtn" onclick="app.submit()">Enviar briefing<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>' +
+      '</div>' +
+      '<p class="err-msg" id="submitErr"></p>' +
+      '</div>';
+  }});
+
+  FLOW.push({ progress: null, render: function () {
+    return '<div class="center">' +
+      '<div class="spinner"></div>' +
+      '<p class="lead">Enviando seu briefing...</p>' +
+      '</div>';
+  }, after: doSubmit });
+
+  FLOW.push({ progress: null, render: function () {
+    return '<div class="center">' +
+      '<div class="done-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg></div>' +
+      '<span class="eyebrow">Recebido</span>' +
+      '<p class="q">Obrigado, ' + esc(state.answers.respNome || '') + '!</p>' +
+      '<p class="lead">Seu briefing chegou certinho. A partir daqui já entramos na etapa de produção — qualquer dúvida, é só nos chamar.</p>' +
+      '</div>';
+  }});
+
+  FLOW.push({ progress: null, render: function () {
+    return '<div class="center">' +
+      '<span class="eyebrow">Ops</span>' +
+      '<p class="q">Não conseguimos enviar seu briefing.</p>' +
+      '<p class="lead">Verifique sua conexão e tente novamente.</p>' +
+      '<div class="actions" style="justify-content:center;"><button class="btn-next" onclick="app.retry()">Tentar de novo</button></div>' +
+      '<p class="fail-note">Se o problema continuar, chame a Apollo no WhatsApp (16) 99611-2109.</p>' +
+      '</div>';
+  }});
+
+  var IDX_SUBMIT_SCREEN = 1 + TOTAL_QUESTIONS;
+  var IDX_SENDING = IDX_SUBMIT_SCREEN + 1;
+  var IDX_THANKYOU = IDX_SENDING + 1;
+  var IDX_FAIL = IDX_THANKYOU + 1;
+
+  /* ================= RENDER DE PERGUNTA ================= */
+  function questionScreen(q, blockName, position) {
+    return {
+      progress: position,
+      render: function () { return renderQuestion(q, blockName); },
+      after: function () { attachQuestion(q); }
+    };
+  }
+
+  function renderQuestion(q, blockName) {
+    var reqMark = q.required ? ' <span class="q-req">*</span>' : '';
+    var html = '<span class="eyebrow">' + esc(blockName) + '</span>' +
+      '<p class="q">' + esc(q.label) + reqMark + '</p>';
+    if (q.hint) html += '<p class="q-hint">' + esc(q.hint) + '</p>';
+
+    if (q.type === 'text' || q.type === 'email' || q.type === 'tel') {
+      var val = esc(state.answers[q.id] || '');
+      html += '<div class="field-wrap"><input class="field" id="f-' + q.id + '" type="' + q.type + '" value="' + val + '" placeholder="' + esc(q.placeholder || '') + '"></div>';
+    } else if (q.type === 'textarea') {
+      html += '<div class="field-wrap"><textarea class="field" id="f-' + q.id + '" placeholder="Sua resposta">' + esc(state.answers[q.id] || '') + '</textarea></div>';
+    } else if (q.type === 'tags') {
+      html += '<div class="tags" id="f-' + q.id + '">';
+      q.options.forEach(function (opt) {
+        var picked = (state.answers[q.id] || []).indexOf(opt) > -1 ? ' picked' : '';
+        html += '<button type="button" class="tag-opt' + picked + '" data-val="' + esc(opt) + '">' + esc(opt) + '</button>';
+      });
+      html += '</div>';
+    } else if (q.type === 'upload') {
+      html += '<div class="drop" id="drop-' + q.id + '">' +
+        '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7.5 8.5L12 4l4.5 4.5M5 16v3a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3"/></svg>' +
+        '<b>Arraste os arquivos aqui</b><span>ou clique para selecionar · até ' + CONFIG.maxFilesPerField + ' arquivos, ' + CONFIG.maxFileSizeMB + 'MB cada</span>' +
+        '<input type="file" id="input-' + q.id + '" multiple style="display:none">' +
+        '</div>' +
+        '<div class="file-list" id="list-' + q.id + '">' + renderFileList(q.id) + '</div>';
+    }
+
+    html += '<p class="err-msg" id="err-' + q.id + '"></p>';
+    html += '<div class="actions">';
+    html += '<button class="btn-back" onclick="app.back()">← Voltar</button>';
+    html += '<button class="btn-next" onclick="app.advance(\'' + q.id + '\')">Continuar<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>';
+    if (!q.required) html += '<button class="skip" onclick="app.skip()">pular esta</button>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderFileList(id) {
+    var files = state.files[id] || [];
+    return files.map(function (f, i) {
+      return '<div class="file-item"><b>' + esc(f.name) + '</b><span class="sz">' + fmtSize(f.size) + '</span>' +
+        '<button type="button" class="rm" onclick="app.removeFile(\'' + id + '\',' + i + ')">✕</button></div>';
+    }).join('');
+  }
+
+  function attachQuestion(q) {
+    if (q.type === 'text' || q.type === 'email' || q.type === 'tel' || q.type === 'textarea') {
+      var el = document.getElementById('f-' + q.id);
+      el.focus();
+      if (q.type !== 'textarea') {
+        el.addEventListener('keydown', function (e) { if (e.key === 'Enter') app.advance(q.id); });
+      }
+    } else if (q.type === 'tags') {
+      var wrap = document.getElementById('f-' + q.id);
+      wrap.querySelectorAll('.tag-opt').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var v = btn.getAttribute('data-val');
+          var arr = state.answers[q.id] || [];
+          var idx = arr.indexOf(v);
+          if (idx > -1) { arr.splice(idx, 1); btn.classList.remove('picked'); }
+          else { arr.push(v); btn.classList.add('picked'); }
+          state.answers[q.id] = arr;
+        });
+      });
+    } else if (q.type === 'upload') {
+      var drop = document.getElementById('drop-' + q.id);
+      var input = document.getElementById('input-' + q.id);
+      drop.addEventListener('click', function () { input.click(); });
+      input.addEventListener('change', function () { handleFiles(q.id, input.files); });
+      ['dragover', 'dragleave', 'drop'].forEach(function (evt) {
+        drop.addEventListener(evt, function (e) {
+          e.preventDefault();
+          drop.classList.toggle('drag', evt === 'dragover');
+          if (evt === 'drop') handleFiles(q.id, e.dataTransfer.files);
+        });
+      });
+    }
+  }
+
+  function handleFiles(id, fileList) {
+    var current = state.files[id] || [];
+    var errEl = document.getElementById('err-' + id);
+    errEl.classList.remove('show');
+    var toAdd = Array.prototype.slice.call(fileList);
+    for (var i = 0; i < toAdd.length; i++) {
+      var f = toAdd[i];
+      if (current.length >= CONFIG.maxFilesPerField) {
+        errEl.textContent = 'Máximo de ' + CONFIG.maxFilesPerField + ' arquivos.';
+        errEl.classList.add('show');
+        break;
+      }
+      if (f.size > CONFIG.maxFileSizeMB * 1024 * 1024) {
+        errEl.textContent = '"' + f.name + '" passa de ' + CONFIG.maxFileSizeMB + 'MB e não foi adicionado.';
+        errEl.classList.add('show');
+        continue;
+      }
+      (function (file) {
+        var reader = new FileReader();
+        reader.onload = function () {
+          current.push({ name: file.name, size: file.size, type: file.type || 'application/octet-stream', dataUrl: reader.result });
+          state.files[id] = current;
+          document.getElementById('list-' + id).innerHTML = renderFileList(id);
+        };
+        reader.readAsDataURL(file);
+      })(f);
+    }
+  }
+
+  /* ================= NAVEGAÇÃO ================= */
+  var screenEl = document.getElementById('screen');
+
+  function findQuestion(id) {
+    for (var b = 0; b < BLOCKS.length; b++) {
+      for (var i = 0; i < BLOCKS[b].questions.length; i++) {
+        if (BLOCKS[b].questions[i].id === id) return BLOCKS[b].questions[i];
+      }
+    }
+    return null;
+  }
+
+  function readCurrentValue(q) {
+    if (q.type === 'text' || q.type === 'email' || q.type === 'tel' || q.type === 'textarea') {
+      var el = document.getElementById('f-' + q.id);
+      state.answers[q.id] = el ? el.value.trim() : '';
+    }
+  }
+
+  function validateCurrent(q) {
+    if (!q.required) return true;
+    if (q.type === 'tags') return (state.answers[q.id] || []).length > 0;
+    return !!(state.answers[q.id] && state.answers[q.id].length);
+  }
+
+  function show(index) {
+    state.stepIndex = index;
+    var step = FLOW[index];
+    screenEl.innerHTML = step.render();
+    screenEl.style.animation = 'none';
+    void screenEl.offsetWidth;
+    screenEl.style.animation = '';
+    updateProgress(step.progress);
+    window.scrollTo({ top: 0 });
+    if (step.after) step.after();
+  }
+
+  function updateProgress(pos) {
+    var wrap = document.getElementById('progress-wrap');
+    var stepCount = document.getElementById('stepCount');
+    if (!pos) { wrap.style.opacity = '0'; stepCount.textContent = ''; return; }
+    wrap.style.opacity = '1';
+    document.getElementById('progress-fill').style.width = Math.round((pos / TOTAL_QUESTIONS) * 100) + '%';
+    stepCount.textContent = pos + ' / ' + TOTAL_QUESTIONS;
+  }
+
+  var app = {
+    next: function () { if (state.stepIndex < FLOW.length - 1) show(state.stepIndex + 1); },
+    back: function () { if (state.stepIndex > 0) show(state.stepIndex - 1); },
+    skip: function () { app.next(); },
+    advance: function (qid) {
+      var q = findQuestion(qid);
+      readCurrentValue(q);
+      var errEl = document.getElementById('err-' + qid);
+      if (!validateCurrent(q)) {
+        errEl.textContent = 'Este campo é obrigatório.';
+        errEl.classList.add('show');
+        return;
+      }
+      errEl.classList.remove('show');
+      app.next();
+    },
+    removeFile: function (id, i) {
+      state.files[id].splice(i, 1);
+      document.getElementById('list-' + id).innerHTML = renderFileList(id);
+    },
+    submit: function () { show(IDX_SENDING); },
+    retry: function () { show(IDX_SENDING); }
+  };
+  window.app = app;
+
+  function doSubmit() {
+    var payload = {
+      respNome: state.answers.respNome || '',
+      respEmail: state.answers.respEmail || '',
+      respWhatsapp: state.answers.respWhatsapp || '',
+      empresaNome: state.answers.empresaNome || '',
+      empresaInicio: state.answers.empresaInicio || '',
+      empresaAtividade: state.answers.empresaAtividade || '',
+      empresaProdutos: state.answers.empresaProdutos || '',
+      objetivoPrincipal: state.answers.objetivoPrincipal || '',
+      objetivoSucesso: state.answers.objetivoSucesso || '',
+      publicoIdeal: state.answers.publicoIdeal || '',
+      publicoObjecoes: state.answers.publicoObjecoes || '',
+      concorrentes: state.answers.concorrentes || '',
+      diferenciais: state.answers.diferenciais || '',
+      concorrentesFrente: state.answers.concorrentesFrente || '',
+      personalidade: state.answers.personalidade || [],
+      personalidadeTop3: state.answers.personalidadeTop3 || '',
+      linguagemEvitar: state.answers.linguagemEvitar || '',
+      naoQuerVer: state.answers.naoQuerVer || '',
+      referenciasVisuais: state.answers.referenciasVisuais || '',
+      infoAdicional: state.answers.infoAdicional || '',
+      slug: slugParam || '',
+      files: {
+        identidadeVisual: state.files.identidadeVisual || [],
+        conteudoArquivos: state.files.conteudoArquivos || []
+      }
+    };
+
+    fetch(CONFIG.endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    }).then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (data && data.ok) show(IDX_THANKYOU);
+        else show(IDX_FAIL);
+      })
+      .catch(function () { show(IDX_FAIL); });
+  }
+
+  show(0);
+})();
+</script>
+</body>
+</html>
