@@ -157,11 +157,11 @@ textarea.field { min-height: 130px; resize: vertical; line-height: 1.55; }
       { id: 'empresaProdutos', type: 'textarea', label: 'Quais são os principais produtos ou serviços?', required: true }
     ]},
     { name: 'Objetivo do projeto', questions: [
-      { id: 'objetivoPrincipal', type: 'textarea', label: 'Qual é o principal objetivo desta página?', required: true },
+      { id: 'objetivoPrincipal', type: 'textarea', label: 'Qual é o principal objetivo deste projeto?', required: true },
       { id: 'objetivoSucesso', type: 'textarea', label: 'O que precisa acontecer para este projeto ser considerado um sucesso?', required: false }
     ]},
     { name: 'Público', questions: [
-      { id: 'publicoIdeal', type: 'textarea', label: 'Quem é o público ideal desta página?', required: true },
+      { id: 'publicoIdeal', type: 'textarea', label: 'Quem é o público ideal deste projeto?', required: true },
       { id: 'publicoObjecoes', type: 'textarea', label: 'Quais dúvidas, receios ou objeções esse público costuma ter antes de comprar ou entrar em contato?', required: false }
     ]},
     { name: 'Concorrência e posicionamento', questions: [
@@ -170,17 +170,17 @@ textarea.field { min-height: 130px; resize: vertical; line-height: 1.55; }
       { id: 'concorrentesFrente', type: 'textarea', label: 'Em que pontos os concorrentes estão à frente hoje?', required: false }
     ]},
     { name: 'Comunicação e tom da marca', questions: [
-      { id: 'personalidade', type: 'tags', label: 'Como você descreveria a personalidade da marca?', hint: 'Selecione as palavras que mais representam a marca — isso define o tom de voz e o estilo visual da página.', required: true, options: PERSONALIDADES },
+      { id: 'personalidade', type: 'tags', label: 'Como você descreveria a personalidade da marca?', hint: 'Selecione as palavras que mais representam a marca — isso define o tom de voz e a linguagem visual do projeto.', required: true, options: PERSONALIDADES },
       { id: 'personalidadeTop3', type: 'text', label: 'Das palavras selecionadas, quais são as três principais?', required: true },
-      { id: 'linguagemEvitar', type: 'text', label: 'Existe alguma linguagem que não deve ser usada na página?', required: false },
+      { id: 'linguagemEvitar', type: 'text', label: 'Existe alguma linguagem que não deve ser usada no projeto?', required: false },
       { id: 'naoQuerVer', type: 'text', label: 'Existe algo que não deve aparecer no projeto?', required: false }
     ]},
     { name: 'Visual e referências', questions: [
       { id: 'identidadeVisual', type: 'upload', label: 'A empresa já possui identidade visual — logo, cores, fontes?', hint: 'Se sim, envie os arquivos (logo, manual de marca, etc.).', required: false },
-      { id: 'referenciasVisuais', type: 'textarea', label: 'Existe algum site ou marca que sirva de referência visual?', hint: 'Envie o link, se possível.', required: false }
+      { id: 'referenciasVisuais', type: 'textarea', label: 'Existe alguma marca ou referência visual que sirva de inspiração?', hint: 'Envie o link, se possível.', required: false }
     ]},
     { name: 'Conteúdo', questions: [
-      { id: 'conteudoArquivos', type: 'upload', label: 'Já existem fotos, textos ou outros materiais para usar na página?', hint: 'Envie os arquivos, se houver.', required: false }
+      { id: 'conteudoArquivos', type: 'upload', label: 'Já existem fotos, textos ou outros materiais para usar no projeto?', hint: 'Envie os arquivos, se houver.', required: false }
     ]},
     { name: 'Informações finais', questions: [
       { id: 'infoAdicional', type: 'textarea', label: 'Existe alguma informação importante sobre o negócio que não foi perguntada?', required: false }
@@ -211,7 +211,7 @@ textarea.field { min-height: 130px; resize: vertical; line-height: 1.55; }
       '<div class="welcome-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L18.5 9.5l-4-4L4 16v4z"/><path d="M13 7l4 4"/></svg></div>' +
       '<span class="eyebrow">Briefing de projeto</span>' +
       '<p class="q">Vamos entender sua <span class="g">marca</span> e o seu <span class="g">negócio</span>.</p>' +
-      '<p class="lead">Este briefing é a base para o desenvolvimento da sua página: cada resposta orienta o design, o texto e a estrutura do projeto.</p>' +
+      '<p class="lead">Este briefing é a base para o desenvolvimento do seu projeto: cada resposta orienta o design, o conteúdo e a estrutura do trabalho.</p>' +
       '<p class="lead">Responda com suas palavras — não existe resposta certa, apenas informações reais sobre o negócio. Perguntas não obrigatórias podem ser deixadas em branco.</p>' +
       '<div class="actions" style="justify-content:center;"><button class="btn-next" onclick="app.next()">Começar<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>' +
       '</div>';
