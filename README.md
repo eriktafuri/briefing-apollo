@@ -6,9 +6,15 @@ e uma pasta do Google Drive — sem precisar de servidor ou banco de dados.
 
 ## Arquivos
 
-- `index.html` — o formulário (estático, hospedável em qualquer lugar, ex.: GitHub Pages)
-- `Code.gs` — o backend, roda no Google Apps Script
-- `apollo-logo.png` — logo usado no cabeçalho
+- `index.html` — o formulário (estático, hospedável em qualquer lugar, ex.: GitHub Pages).
+  É **único e genérico** — o mesmo link serve pra qualquer cliente novo.
+- `painel.html` — painel interno, protegido por senha, com a lista de todas as
+  respostas recebidas. **Uso só seu** — não é pra mandar pro cliente.
+- `resposta.html` — abre a partir do painel: mostra uma resposta específica
+  formatada por inteiro, no mesmo estilo visual da proposta (em vez da linha
+  crua da planilha).
+- `Code.gs` — o backend, roda no Google Apps Script.
+- `apollo-logo.png` — logo usado no cabeçalho.
 
 ## Como publicar (10 minutos, só uma vez)
 
@@ -29,10 +35,22 @@ e uma pasta do Google Drive — sem precisar de servidor ou banco de dados.
      ...
    };
    ```
-7. Suba o `index.html` + `apollo-logo.png` pra onde for hospedar (ex.: GitHub Pages,
-   igual à proposta e ao relatório).
+7. Suba `index.html` + `painel.html` + `resposta.html` + `apollo-logo.png` pra onde
+   for hospedar (ex.: GitHub Pages, igual à proposta e ao relatório).
 
 Pronto. Cada envio cria uma linha na aba **Respostas** da planilha.
+
+## Painel interno (`painel.html` + `resposta.html`)
+
+Depois que os clientes começam a responder, abra `painel.html` (senha padrão:
+`apollo123` — troque em `PAINEL_SENHA` no `Code.gs`). Ele lista todas as
+respostas recebidas; clicar em "Ver briefing" abre `resposta.html` com aquela
+resposta inteira, formatada e legível — nome, e-mail, objetivo, público,
+concorrência, tom de marca, arquivos enviados etc.
+
+Esse painel é **só pra uso interno seu** — não gera nem precisa de link
+personalizado por cliente. O formulário (`index.html`) continua sendo um
+único link padrão, igual para todo mundo.
 
 ## Onde ficam os arquivos
 
