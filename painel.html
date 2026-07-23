@@ -20,6 +20,7 @@ html { -webkit-text-size-adjust: 100%; }
   --grad:   linear-gradient(95deg, #FFB238 0%, #F2701D 55%, #E8460C 100%);
   --accent: #E8590C;
   --err:    #D5484A;
+  --ok:     #0E8A5F;
   --f-sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --f-mono: ui-monospace, "Cascadia Code", "SF Mono", "Segoe UI Mono", Menlo, Consolas, monospace;
 }
@@ -52,6 +53,10 @@ body {
 .ghost:hover { border-color: var(--accent); }
 
 .err { margin: 10px 0 0; font-size: .8rem; color: var(--err); font-weight: 600; }
+.ok { margin: 10px 0 0; font-size: .8rem; color: var(--ok); font-weight: 600; }
+
+.link-row { display: flex; gap: 8px; }
+.link-row input { flex: 1; font-family: var(--f-mono); font-size: .72rem; color: var(--ink-2); padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; background: #FFFAF5; min-width: 0; }
 
 .list { display: grid; gap: 10px; }
 .item { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; row-gap: 8px; padding: 13px 15px; border: 1px solid var(--line); border-radius: 11px; background: #FFFAF5; }
@@ -59,6 +64,10 @@ body {
 .item .who b { display: block; color: var(--ink); font-weight: 650; font-size: .9rem; }
 .item .who span { display: block; font-family: var(--f-mono); font-size: .62rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-top: 2px; }
 .empty { font-size: .85rem; color: var(--muted); }
+
+.icon-btn { flex: none; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 8px; background: none; cursor: pointer; color: var(--muted); }
+.icon-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.icon-btn.danger:hover { color: var(--err); border-color: var(--err); background: #FDF0EF; }
 
 .gate { display: flex; align-items: center; justify-content: center; min-height: 70vh; }
 .gate .card { max-width: 360px; width: 100%; }
@@ -81,6 +90,17 @@ body {
   <div class="head">
     <img src="apollo-logo.png" alt="Apollo Gestão Digital">
     <span>Painel de Briefings</span>
+  </div>
+
+  <div class="card">
+    <h2>Link do formulário</h2>
+    <p class="hint">Link único e padrão — envie para qualquer cliente novo preencher o briefing.</p>
+    <div class="link-row">
+      <input type="text" id="formLinkInput" readonly>
+      <button class="ghost" id="copiarFormBtn">Copiar</button>
+      <a class="ghost" id="waFormBtn" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+    </div>
+    <p class="ok hidden" id="copiadoFormMsg">Link copiado ✓</p>
   </div>
 
   <div class="card">
@@ -109,11 +129,23 @@ body {
     return 'resposta.html?id=' + encodeURIComponent(id) + '&senha=' + encodeURIComponent(senha);
   }
 
+  var FORM_LINK = new URL('index.html', location.href).href;
+
   function mostrarPainel() {
     document.getElementById('gate').classList.add('hidden');
     document.getElementById('painel').classList.remove('hidden');
+    document.getElementById('formLinkInput').value = FORM_LINK;
+    document.getElementById('waFormBtn').href = 'https://wa.me/?text=' + encodeURIComponent(FORM_LINK);
     carregarLista();
   }
+
+  document.getElementById('copiarFormBtn').addEventListener('click', function () {
+    navigator.clipboard.writeText(FORM_LINK).then(function () {
+      var msg = document.getElementById('copiadoFormMsg');
+      msg.classList.remove('hidden');
+      setTimeout(function () { msg.classList.add('hidden'); }, 2200);
+    });
+  });
 
   function entrar() {
     var tentativa = document.getElementById('senhaInput').value;
@@ -147,11 +179,27 @@ body {
           return '<div class="item">' +
             '<div class="who"><b>' + esc(r.empresaNome) + '</b><span>Respondido por ' + esc(r.respNome) + ' · ' + fmtData(r.timestamp) + '</span></div>' +
             '<a class="ghost" href="' + linkResposta(r.id) + '" target="_blank" rel="noopener noreferrer">Ver briefing</a>' +
+            '<button class="icon-btn danger" title="Excluir" aria-label="Excluir" onclick="app.excluir(\'' + r.id + '\', \'' + esc(r.empresaNome).replace(/'/g, "\\'") + '\')">' +
+              '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><path d="M10 11v6M14 11v6"/></svg>' +
+            '</button>' +
             '</div>';
         }).join('');
       })
       .catch(function () { el.innerHTML = '<p class="empty">Não foi possível carregar.</p>'; });
   }
+
+  window.app = {
+    excluir: function (id, empresa) {
+      if (!confirm('Excluir o briefing de "' + empresa + '"? Essa ação não pode ser desfeita.')) return;
+      fetch(ENDPOINT + '?action=excluir&id=' + encodeURIComponent(id) + '&senha=' + encodeURIComponent(senha))
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data && data.ok) carregarLista();
+          else alert('Não foi possível excluir.');
+        })
+        .catch(function () { alert('Não foi possível conectar. Tente novamente.'); });
+    }
+  };
 
   if (senha) {
     fetch(ENDPOINT + '?action=listar&senha=' + encodeURIComponent(senha))

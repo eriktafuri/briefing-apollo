@@ -33,6 +33,7 @@ function doGet(e) {
     var action = e.parameter.action;
     if (action === 'listar') return doGetListar_(e);
     if (action === 'resposta') return doGetResposta_(e);
+    if (action === 'excluir') return doGetExcluir_(e);
 
     // sem action: diagnóstico de formatação (compatibilidade)
     var sheet = getSheet_();
@@ -140,6 +141,25 @@ function doGetResposta_(e) {
         obj[h] = v instanceof Date ? v.toISOString() : v;
       });
       return jsonOut_({ ok: true, resposta: obj });
+    }
+  }
+  return jsonOut_({ ok: false });
+}
+
+// exclui uma resposta (linha inteira) pelo id — usada pelo painel.html
+function doGetExcluir_(e) {
+  checarSenha_(e);
+  var id = (e.parameter.id || '').toString();
+  var sheet = getSheet_();
+  var last = sheet.getLastRow();
+  if (last < 2) return jsonOut_({ ok: false });
+
+  var idCol = HEADERS.indexOf('id');
+  var values = sheet.getRange(2, 1, last - 1, 1 + idCol).getValues();
+  for (var i = 0; i < values.length; i++) {
+    if (values[i][idCol] === id) {
+      sheet.deleteRow(i + 2);
+      return jsonOut_({ ok: true });
     }
   }
   return jsonOut_({ ok: false });
