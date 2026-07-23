@@ -98,7 +98,6 @@ body {
     <div class="link-row">
       <input type="text" id="formLinkInput" readonly>
       <button class="ghost" id="copiarFormBtn">Copiar</button>
-      <a class="ghost" id="waFormBtn" target="_blank" rel="noopener noreferrer">WhatsApp</a>
     </div>
     <p class="ok hidden" id="copiadoFormMsg">Link copiado ✓</p>
   </div>
@@ -135,7 +134,6 @@ body {
     document.getElementById('gate').classList.add('hidden');
     document.getElementById('painel').classList.remove('hidden');
     document.getElementById('formLinkInput').value = FORM_LINK;
-    document.getElementById('waFormBtn').href = 'https://wa.me/?text=' + encodeURIComponent(FORM_LINK);
     carregarLista();
   }
 
@@ -179,6 +177,7 @@ body {
           return '<div class="item">' +
             '<div class="who"><b>' + esc(r.empresaNome) + '</b><span>Respondido por ' + esc(r.respNome) + ' · ' + fmtData(r.timestamp) + '</span></div>' +
             '<a class="ghost" href="' + linkResposta(r.id) + '" target="_blank" rel="noopener noreferrer">Ver briefing</a>' +
+            '<button class="ghost" onclick="app.copiarResposta(\'' + r.id + '\', this)">Copiar link</button>' +
             '<button class="icon-btn danger" title="Excluir" aria-label="Excluir" onclick="app.excluir(\'' + r.id + '\', \'' + esc(r.empresaNome).replace(/'/g, "\\'") + '\')">' +
               '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><path d="M10 11v6M14 11v6"/></svg>' +
             '</button>' +
@@ -189,6 +188,13 @@ body {
   }
 
   window.app = {
+    copiarResposta: function (id, btn) {
+      navigator.clipboard.writeText(new URL(linkResposta(id), location.href).href).then(function () {
+        var original = btn.textContent;
+        btn.textContent = 'Copiado ✓';
+        setTimeout(function () { btn.textContent = original; }, 1800);
+      });
+    },
     excluir: function (id, empresa) {
       if (!confirm('Excluir o briefing de "' + empresa + '"? Essa ação não pode ser desfeita.')) return;
       fetch(ENDPOINT + '?action=excluir&id=' + encodeURIComponent(id) + '&senha=' + encodeURIComponent(senha))
