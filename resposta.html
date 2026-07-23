@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Briefing recebido — Apollo Gestão Digital</title>
+<style>
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+:root {
+  color-scheme: light;
+  --page:   #E9EAEC;
+  --paper:  #FFFFFF;
+  --ink:    #14151A;
+  --ink-2:  #4B4D56;
+  --muted:  #8B8E98;
+  --line:   rgba(20,21,26,.13);
+  --line-2: rgba(20,21,26,.07);
+  --grad:   linear-gradient(95deg, #FFB238 0%, #F2701D 55%, #E8460C 100%);
+  --accent: #E8590C;
+  --f-sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --f-mono: ui-monospace, "Cascadia Code", "SF Mono", "Segoe UI Mono", Menlo, Consolas, monospace;
+}
+
+body {
+  margin: 0; background: var(--page); color: var(--ink-2);
+  font-family: var(--f-sans); line-height: 1.62;
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+  padding: clamp(0px, 4vw, 40px) 0;
+}
+
+.sheet {
+  max-width: 680px; margin: 0 auto; position: relative; overflow: hidden;
+  background: var(--paper); border: 1px solid var(--line);
+  box-shadow: 0 1px 1px rgba(20,21,26,.03), 0 24px 60px -30px rgba(20,21,26,.28);
+  padding: clamp(36px, 7vw, 64px) clamp(24px, 6vw, 56px) clamp(38px, 7vw, 56px);
+}
+.sheet::before {
+  content: ""; position: absolute; top: -120px; right: -120px; width: 320px; height: 320px;
+  background: radial-gradient(closest-side, rgba(232,89,12,.13), transparent 70%);
+  pointer-events: none;
+}
+
+.head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; position: relative; }
+.logo { height: 34px; width: auto; display: block; flex: none; }
+.ref { font-family: var(--f-mono); font-size: .64rem; line-height: 1.7; letter-spacing: .04em; color: var(--muted); text-align: right; text-transform: uppercase; padding-top: 2px; min-width: 0; overflow-wrap: anywhere; }
+.ref b { color: var(--ink-2); font-weight: 600; }
+
+.gradline { height: 2px; background: var(--grad); border: 0; margin: 22px 0 0; opacity: .92; }
+
+.cover-meta { display: grid; grid-template-columns: 1fr; gap: 14px; margin: 30px 0 0; padding: 18px 20px; border: 1px solid var(--line); border-radius: 12px; background: #FFFAF5; }
+.cover-meta > div { display: flex; flex-direction: column; gap: 3px; }
+.cover-meta > div > span { font-family: var(--f-mono); font-size: .58rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.cover-meta b { color: var(--ink); font-weight: 600; font-size: .9rem; line-height: 1.4; text-wrap: balance; }
+
+.intro { padding: 46px 0 8px; }
+.eyebrow { font-family: var(--f-mono); font-size: .66rem; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+.intro .eyebrow { display: block; margin-bottom: 18px; }
+.statement { font-weight: 500; color: var(--ink); font-size: clamp(1.25rem, 3.6vw, 1.6rem); line-height: 1.35; letter-spacing: -.015em; text-wrap: balance; margin: 0; }
+.g { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.statement .g { font-weight: 700; }
+
+.row { display: grid; grid-template-columns: 1fr; gap: 16px; padding: 40px 0; border-top: 1px solid var(--line-2); }
+.row:first-of-type { border-top: 0; }
+.lbl { font-family: var(--f-mono); font-size: .68rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); display: flex; align-items: baseline; gap: 9px; }
+.lbl .n { font-weight: 700; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.c { color: var(--ink-2); display: grid; gap: 20px; align-content: start; }
+
+.qa { display: grid; gap: 6px; }
+.qa .qtxt { font-size: .78rem; color: var(--muted); font-style: italic; }
+.qa .atxt { color: var(--ink); font-size: .96rem; line-height: 1.6; white-space: pre-wrap; text-wrap: pretty; }
+.qa .empty { color: var(--muted); font-style: italic; }
+
+.tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag { font-family: var(--f-mono); font-size: .74rem; color: var(--ink); background: #FFF3E9; border: 1px solid rgba(232,89,12,.25); border-radius: 20px; padding: 5px 13px; }
+
+.files { display: grid; gap: 8px; }
+.files a { display: block; font-size: .86rem; color: var(--accent); text-decoration: none; word-break: break-all; }
+.files a:hover { text-decoration: underline; }
+.folder-link { display: inline-flex; align-items: center; gap: 8px; margin-top: 4px; font-weight: 650; font-size: .88rem; color: var(--ink); text-decoration: none; border: 1px solid var(--line); border-radius: 9px; padding: 10px 16px; }
+.folder-link:hover { border-color: var(--accent); background: #FFF3E9; }
+
+.foot { margin-top: 56px; padding-top: 26px; border-top: 1px solid var(--line-2); display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.foot-logo { height: 24px; width: auto; display: block; }
+.foot-info { font-family: var(--f-mono); font-size: .64rem; line-height: 1.85; letter-spacing: .03em; color: var(--muted); text-transform: uppercase; text-align: right; }
+
+.state { max-width: 480px; margin: 15vh auto 0; text-align: center; padding: 0 20px; }
+.state p { color: var(--ink-2); font-size: .95rem; }
+.state a { color: var(--accent); font-weight: 600; text-decoration: none; }
+.state a:hover { text-decoration: underline; }
+
+@media (min-width: 640px) {
+  .row { grid-template-columns: 148px 1fr; gap: 20px 40px; }
+  .cover-meta { grid-template-columns: 1fr 1fr 1fr; align-items: start; }
+}
+@media print {
+  body { background: #fff; padding: 0; }
+  .sheet { box-shadow: none; border: 0; max-width: none; }
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="state"><p>Carregando...</p></div>
+</div>
+
+<script>
+(function () {
+  var ENDPOINT = 'https://script.google.com/macros/s/AKfycbwdljBSI93L2Q6C2XYU07yQnDj0VQm52Mu2KeNNFCpCaHCptr2dvU7bX4_E9hBOaamb/exec';
+  var params = new URLSearchParams(location.search);
+  var id = params.get('id') || '';
+  var senha = params.get('senha') || '';
+  var app = document.getElementById('app');
+
+  function esc(s) {
+    return (s || '').toString().replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function fmtData(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    return d.toLocaleDateString('pt-BR') + ' às ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+  function qa(pergunta, valor) {
+    var v = (valor || '').toString().trim();
+    return '<div class="qa"><span class="qtxt">' + esc(pergunta) + '</span>' +
+      '<span class="' + (v ? 'atxt' : 'atxt empty') + '">' + (v ? esc(v) : 'Não respondido') + '</span></div>';
+  }
+  function fileLinks(valor) {
+    var v = (valor || '').toString().trim();
+    if (!v) return '<p class="qa"><span class="atxt empty">Nenhum arquivo enviado</span></p>';
+    var links = v.split('\n').filter(Boolean);
+    return '<div class="files">' + links.map(function (l, i) {
+      return '<a href="' + esc(l) + '" target="_blank" rel="noopener noreferrer">Arquivo ' + (i + 1) + ' ↗</a>';
+    }).join('') + '</div>';
+  }
+
+  if (!id || !senha) {
+    app.innerHTML = '<div class="state"><p>Link incompleto.</p><p><a href="painel.html">← Voltar ao painel</a></p></div>';
+    return;
+  }
+
+  fetch(ENDPOINT + '?action=resposta&id=' + encodeURIComponent(id) + '&senha=' + encodeURIComponent(senha))
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (!data || !data.ok) {
+        app.innerHTML = '<div class="state"><p>Não foi possível carregar essa resposta (senha incorreta ou briefing não encontrado).</p><p><a href="painel.html">← Voltar ao painel</a></p></div>';
+        return;
+      }
+      render(data.resposta);
+    })
+    .catch(function () {
+      app.innerHTML = '<div class="state"><p>Não foi possível conectar. Tente novamente.</p><p><a href="painel.html">← Voltar ao painel</a></p></div>';
+    });
+
+  function render(r) {
+    var tags = (r.personalidade || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+
+    var html = '<div class="sheet">' +
+      '<header class="head">' +
+        '<img class="logo" src="apollo-logo.png" alt="Apollo Gestão Digital">' +
+        '<div class="ref"><b>Briefing recebido</b><br>Uso interno · Apollo Gestão Digital</div>' +
+      '</header>' +
+      '<hr class="gradline">' +
+      '<div class="cover-meta">' +
+        '<div><span>Empresa</span><b>' + esc(r.empresaNome) + '</b></div>' +
+        '<div><span>Respondido por</span><b>' + esc(r.respNome) + '</b></div>' +
+        '<div><span>Data</span><b>' + fmtData(r.timestamp) + '</b></div>' +
+      '</div>' +
+      '<div class="intro">' +
+        '<span class="eyebrow">Briefing de projeto · Resumo completo</span>' +
+        '<p class="statement">Briefing da <span class="g">' + esc(r.empresaNome) + '</span>, respondido por ' + esc(r.respNome) + '.</p>' +
+      '</div>' +
+
+      '<section class="row"><div class="lbl"><span class="n">01</span> Contato</div><div class="c">' +
+        qa('Nome', r.respNome) + qa('E-mail', r.respEmail) + qa('WhatsApp', r.respWhatsapp) +
+      '</div></section>' +
+
+      '<section class="row"><div class="lbl"><span class="n">02</span> Sobre a empresa</div><div class="c">' +
+        qa('Início da empresa', r.empresaInicio) +
+        qa('O que a empresa faz e oferece hoje', r.empresaAtividade) +
+        qa('Principais produtos ou serviços', r.empresaProdutos) +
+      '</div></section>' +
+
+      '<section class="row"><div class="lbl"><span class="n">03</span> Objetivo do projeto</div><div class="c">' +
+        qa('Principal objetivo da página', r.objetivoPrincipal) +
+        qa('O que define sucesso pra esse projeto', r.objetivoSucesso) +
+      '</div></section>' +
+
+      '<section class="row"><div class="lbl"><span class="n">04</span> Público</div><div class="c">' +
+        qa('Pessoa ideal', r.publicoIdeal) +
+        qa('Dúvidas, medos ou objeções', r.publicoObjecoes) +
+      '</div></section>' +
+
+      '<section class="row"><div class="lbl"><span class="n">05</span> Concorrência</div><div class="c">' +
+        qa('Principais concorrentes', r.concorrentes) +
+        qa('Onde a empresa se destaca', r.diferenciais) +
+        qa('Onde os concorrentes estão à frente', r.concorrentesFrente) +
+      '</div></section>' +
+
+      '<section class="row"><div class="lbl"><span class="n">06</span> Tom de marca</div><div class="c">' +
+        (tags.length ? '<div class="tags">' + tags.map(function (t) { return '<span class="tag">' + esc(t) + '</span>'; }).join('') + '</div>' : '<p class="qa"><span class="atxt empty">Não respondido</span></p>') +
+        qa('As três principais', r.personalidadeTop3) +
+        qa('Linguagem a evitar', r.linguagemEvitar) +
+        qa('O que não quer ver no projeto', r.naoQuerVer) +
+      '</div></section>' +
+
+      '<section class="row"><div class="lbl"><span class="n">07</span> Visual e conteúdo</div><div class="c">' +
+        qa('Referências visuais', r.referenciasVisuais) +
+        '<div class="qa"><span class="qtxt">Identidade visual enviada</span></div>' + fileLinks(r.identidadeVisual) +
+        '<div class="qa"><span class="qtxt">Conteúdo enviado (fotos, textos)</span></div>' + fileLinks(r.conteudoArquivos) +
+        (r.pastaDrive ? '<a class="folder-link" href="' + esc(r.pastaDrive) + '" target="_blank" rel="noopener noreferrer">Abrir pasta completa no Drive →</a>' : '') +
+      '</div></section>' +
+
+      '<section class="row"><div class="lbl"><span class="n">!</span> Mais</div><div class="c">' +
+        qa('Outras informações', r.infoAdicional) +
+      '</div></section>' +
+
+      '<footer class="foot">' +
+        '<img class="foot-logo" src="apollo-logo.png" alt="Apollo Gestão Digital">' +
+        '<span class="foot-info">Briefing interno<br>' + fmtData(r.timestamp) + '</span>' +
+      '</footer>' +
+    '</div>';
+
+    app.innerHTML = html;
+  }
+})();
+</script>
+</body>
+</html>

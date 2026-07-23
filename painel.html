@@ -20,7 +20,6 @@ html { -webkit-text-size-adjust: 100%; }
   --grad:   linear-gradient(95deg, #FFB238 0%, #F2701D 55%, #E8460C 100%);
   --accent: #E8590C;
   --err:    #D5484A;
-  --ok:     #0E8A5F;
   --f-sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --f-mono: ui-monospace, "Cascadia Code", "SF Mono", "Segoe UI Mono", Menlo, Consolas, monospace;
 }
@@ -49,24 +48,16 @@ body {
 
 .btn { font: inherit; font-weight: 650; font-size: .92rem; color: #fff; background: var(--accent); border: 0; border-radius: 10px; padding: 12px 18px; cursor: pointer; width: 100%; transition: background .15s ease; }
 .btn:hover { background: #C94A0A; }
-.btn:disabled { opacity: .6; cursor: default; }
-.ghost { font: inherit; font-weight: 600; font-size: .82rem; color: var(--ink-2); background: none; border: 1px solid var(--line); border-radius: 8px; padding: 8px 13px; cursor: pointer; white-space: nowrap; }
+.ghost { font: inherit; font-weight: 600; font-size: .82rem; color: var(--ink-2); background: none; border: 1px solid var(--line); border-radius: 8px; padding: 8px 13px; cursor: pointer; white-space: nowrap; text-decoration: none; display: inline-block; }
 .ghost:hover { border-color: var(--accent); }
 
 .err { margin: 10px 0 0; font-size: .8rem; color: var(--err); font-weight: 600; }
-.ok { margin: 10px 0 0; font-size: .8rem; color: var(--ok); font-weight: 600; }
-
-.link-row { display: flex; gap: 8px; margin-top: 14px; }
-.link-row input { flex: 1; font-family: var(--f-mono); font-size: .72rem; color: var(--ink-2); padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; background: #FFFAF5; min-width: 0; }
 
 .list { display: grid; gap: 10px; }
 .item { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; row-gap: 8px; padding: 13px 15px; border: 1px solid var(--line); border-radius: 11px; background: #FFFAF5; }
 .item .who { flex: 1; min-width: 160px; }
 .item .who b { display: block; color: var(--ink); font-weight: 650; font-size: .9rem; }
 .item .who span { display: block; font-family: var(--f-mono); font-size: .62rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-top: 2px; }
-.badge { font-family: var(--f-mono); font-size: .58rem; letter-spacing: .08em; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
-.badge.respondido { color: var(--ok); border-color: rgba(14,138,95,.35); background: #EDFAF4; }
-.badge.enviado { color: var(--accent); border-color: rgba(232,89,12,.3); background: #FFF3E9; }
 .empty { font-size: .85rem; color: var(--muted); }
 
 .gate { display: flex; align-items: center; justify-content: center; min-height: 70vh; }
@@ -93,20 +84,8 @@ body {
   </div>
 
   <div class="card">
-    <h1>Gerar novo briefing</h1>
-    <p class="hint">Digite o nome do cliente e gere o link exclusivo para enviar por WhatsApp ou e-mail.</p>
-    <div class="f"><label for="empresaInput">Nome da empresa</label><input type="text" id="empresaInput" placeholder="Ex.: Grupo BrasilServ"></div>
-    <button class="btn" id="gerarBtn">Gerar link</button>
-    <p class="err" id="gerarErr"></p>
-    <div class="link-row hidden" id="linkRow">
-      <input type="text" id="linkOutput" readonly>
-      <button class="ghost" id="copiarNovoBtn">Copiar</button>
-    </div>
-    <p class="ok hidden" id="copiadoNovoMsg">Link copiado ✓</p>
-  </div>
-
-  <div class="card">
-    <h2>Briefings enviados</h2>
+    <h2>Briefings recebidos</h2>
+    <p class="hint">Cada item abre a resposta completa desse cliente, formatada pra leitura.</p>
     <div class="list" id="lista"><p class="empty">Carregando...</p></div>
   </div>
 </div>
@@ -116,13 +95,18 @@ body {
   var ENDPOINT = 'https://script.google.com/macros/s/AKfycbwdljBSI93L2Q6C2XYU07yQnDj0VQm52Mu2KeNNFCpCaHCptr2dvU7bX4_E9hBOaamb/exec';
   var senha = sessionStorage.getItem('apolloPainelSenha') || '';
 
-  function linkDoSlug(slug) {
-    return new URL('index.html?c=' + encodeURIComponent(slug), location.href).href;
+  function esc(s) {
+    return (s || '').toString().replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
   }
   function fmtData(iso) {
     if (!iso) return '';
     var d = new Date(iso);
     return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+  function linkResposta(id) {
+    return 'resposta.html?id=' + encodeURIComponent(id) + '&senha=' + encodeURIComponent(senha);
   }
 
   function mostrarPainel() {
@@ -152,79 +136,22 @@ body {
   document.getElementById('entrarBtn').addEventListener('click', entrar);
   document.getElementById('senhaInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') entrar(); });
 
-  function gerarLink() {
-    var empresa = document.getElementById('empresaInput').value.trim();
-    var errEl = document.getElementById('gerarErr');
-    var btn = document.getElementById('gerarBtn');
-    errEl.textContent = '';
-    if (!empresa) { errEl.textContent = 'Digite o nome da empresa.'; return; }
-    btn.disabled = true;
-    btn.textContent = 'Gerando...';
-    fetch(ENDPOINT + '?action=criar&senha=' + encodeURIComponent(senha) + '&empresa=' + encodeURIComponent(empresa))
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        btn.disabled = false;
-        btn.textContent = 'Gerar link';
-        if (!data || !data.ok) { errEl.textContent = 'Não foi possível gerar o link.'; return; }
-        var link = linkDoSlug(data.slug);
-        var out = document.getElementById('linkOutput');
-        out.value = link;
-        document.getElementById('linkRow').classList.remove('hidden');
-        document.getElementById('empresaInput').value = '';
-        carregarLista();
-      })
-      .catch(function () {
-        btn.disabled = false;
-        btn.textContent = 'Gerar link';
-        errEl.textContent = 'Não foi possível conectar. Tente novamente.';
-      });
-  }
-  document.getElementById('gerarBtn').addEventListener('click', gerarLink);
-  document.getElementById('empresaInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') gerarLink(); });
-
-  function copiar(texto, msgEl) {
-    navigator.clipboard.writeText(texto).then(function () {
-      if (msgEl) { msgEl.classList.remove('hidden'); setTimeout(function () { msgEl.classList.add('hidden'); }, 2200); }
-    });
-  }
-  document.getElementById('copiarNovoBtn').addEventListener('click', function () {
-    copiar(document.getElementById('linkOutput').value, document.getElementById('copiadoNovoMsg'));
-  });
-
   function carregarLista() {
     var el = document.getElementById('lista');
     fetch(ENDPOINT + '?action=listar&senha=' + encodeURIComponent(senha))
       .then(function (r) { return r.json(); })
       .then(function (data) {
         if (!data || !data.ok) { el.innerHTML = '<p class="empty">Não foi possível carregar.</p>'; return; }
-        if (!data.convites.length) { el.innerHTML = '<p class="empty">Nenhum briefing gerado ainda.</p>'; return; }
-        el.innerHTML = data.convites.map(function (c) {
-          var respondido = c.status === 'Respondido';
+        if (!data.respostas.length) { el.innerHTML = '<p class="empty">Nenhum briefing recebido ainda.</p>'; return; }
+        el.innerHTML = data.respostas.map(function (r) {
           return '<div class="item">' +
-            '<div class="who"><b>' + escapeHtml(c.empresa) + '</b><span>' + fmtData(c.criadoEm) + '</span></div>' +
-            '<span class="badge ' + (respondido ? 'respondido' : 'enviado') + '">' + escapeHtml(c.status) + '</span>' +
-            '<button class="ghost" onclick="app.copiarLink(\'' + c.slug + '\', this)">Copiar link</button>' +
+            '<div class="who"><b>' + esc(r.empresaNome) + '</b><span>Respondido por ' + esc(r.respNome) + ' · ' + fmtData(r.timestamp) + '</span></div>' +
+            '<a class="ghost" href="' + linkResposta(r.id) + '" target="_blank" rel="noopener noreferrer">Ver briefing</a>' +
             '</div>';
         }).join('');
       })
       .catch(function () { el.innerHTML = '<p class="empty">Não foi possível carregar.</p>'; });
   }
-
-  function escapeHtml(s) {
-    return (s || '').toString().replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
-  }
-
-  window.app = {
-    copiarLink: function (slug, btn) {
-      navigator.clipboard.writeText(linkDoSlug(slug)).then(function () {
-        var original = btn.textContent;
-        btn.textContent = 'Copiado ✓';
-        setTimeout(function () { btn.textContent = original; }, 1800);
-      });
-    }
-  };
 
   if (senha) {
     fetch(ENDPOINT + '?action=listar&senha=' + encodeURIComponent(senha))

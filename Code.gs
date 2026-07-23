@@ -1,13 +1,12 @@
 /**
  * Backend do Briefing Apollo — recebe o POST do formulário HTML,
  * grava uma linha na aba "Respostas", salva os arquivos no Drive,
- * e gerencia os links personalizados por cliente (aba "Convites").
+ * e serve o painel interno (lista de respostas + visualização de cada uma).
  *
  * Instruções completas de instalação: ver README.md.
  */
 
 var SHEET_NAME = 'Respostas';
-var CONVITES_SHEET_NAME = 'Convites';
 var DRIVE_FOLDER_NAME = 'Briefings Apollo — Arquivos';
 var FILE_FIELDS = ['identidadeVisual', 'conteudoArquivos'];
 
@@ -25,18 +24,15 @@ var HEADERS = [
   'identidadeVisual', 'referenciasVisuais', 'conteudoArquivos',
   'pastaDrive',
   'infoAdicional',
-  'slug' // sempre por último — não mexer na ordem das colunas já existentes
+  'id' // sempre por último — identifica a resposta pro painel interno
 ];
-
-var CONVITES_HEADERS = ['slug', 'empresa', 'criadoEm', 'status', 'respondidoEm', 'link'];
 
 /* ================= ROTEAMENTO ================= */
 function doGet(e) {
   try {
     var action = e.parameter.action;
-    if (action === 'info') return doGetInfo_(e);
-    if (action === 'criar') return doGetCriar_(e);
     if (action === 'listar') return doGetListar_(e);
+    if (action === 'resposta') return doGetResposta_(e);
 
     // sem action: diagnóstico de formatação (compatibilidade)
     var sheet = getSheet_();
@@ -65,6 +61,7 @@ function doPost(e) {
 
     var empresa = (data.empresaNome || data.respNome || 'sem-nome').toString();
     var timestamp = new Date();
+    var id = Utilities.getUuid();
 
     // uma pasta só por envio — todos os arquivos (de qualquer campo) caem nela junto
     var hasFiles = FILE_FIELDS.some(function (key) {
@@ -79,15 +76,13 @@ function doPost(e) {
 
     var row = HEADERS.map(function (h) {
       if (h === 'timestamp') return timestamp;
+      if (h === 'id') return id;
       if (h === 'pastaDrive') return clientFolder ? clientFolder.getUrl() : '';
-      if (h === 'slug') return data.slug || '';
       if (FILE_FIELDS.indexOf(h) > -1) return fileLinks[h];
       if (h === 'personalidade') return (data.personalidade || []).join(', ');
       return data[h] !== undefined ? data[h] : '';
     });
     sheet.appendRow(row);
-
-    if (data.slug) marcarRespondido_(data.slug);
 
     return jsonOut_({ ok: true });
   } catch (err) {
@@ -95,101 +90,59 @@ function doPost(e) {
   }
 }
 
-/* ================= CONVITES (links personalizados) ================= */
+/* ================= PAINEL INTERNO (somente leitura) ================= */
 function checarSenha_(e) {
   if (!e.parameter.senha || e.parameter.senha !== PAINEL_SENHA) {
     throw new Error('Senha incorreta.');
   }
 }
 
-function doGetInfo_(e) {
-  var slug = (e.parameter.slug || '').toString();
-  var convite = buscarConvitePorSlug_(slug);
-  if (!convite) return jsonOut_({ ok: false });
-  return jsonOut_({ ok: true, empresa: convite.empresa, status: convite.status });
-}
-
-function doGetCriar_(e) {
-  checarSenha_(e);
-  var empresa = (e.parameter.empresa || '').toString().trim();
-  if (!empresa) throw new Error('Informe o nome da empresa.');
-  var link = (e.parameter.link || '').toString();
-  var criado = criarConvite_(empresa, link);
-  return jsonOut_({ ok: true, slug: criado.slug });
-}
-
+// lista resumida — usada pelo painel.html
 function doGetListar_(e) {
   checarSenha_(e);
-  return jsonOut_({ ok: true, convites: listarConvites_() });
-}
-
-function getConvitesSheet_() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(CONVITES_SHEET_NAME);
-  if (!sheet) {
-    sheet = ss.insertSheet(CONVITES_SHEET_NAME);
-    sheet.appendRow(CONVITES_HEADERS);
-    sheet.getRange(1, 1, 1, CONVITES_HEADERS.length).setFontWeight('bold');
-    sheet.setFrozenRows(1);
-    var widths = { slug: 180, empresa: 200, criadoEm: 150, status: 110, respondidoEm: 150, link: 320 };
-    CONVITES_HEADERS.forEach(function (h, i) { sheet.setColumnWidth(i + 1, widths[h] || 160); });
-    sheet.getBandings().forEach(function (b) { b.remove(); });
-    sheet.getRange(1, 1, 200, CONVITES_HEADERS.length).applyRowBanding(SpreadsheetApp.BandingTheme.ORANGE, true, false);
-  }
-  return sheet;
-}
-
-function slugify_(text) {
-  var s = (text || '').toString().toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 48);
-  return s || 'briefing';
-}
-
-function criarConvite_(empresa, link) {
-  var sheet = getConvitesSheet_();
-  var base = slugify_(empresa);
+  var sheet = getSheet_();
   var last = sheet.getLastRow();
-  var existentes = last > 1 ? sheet.getRange(2, 1, last - 1, 1).getValues().map(function (r) { return r[0]; }) : [];
-  var slug = base;
-  var i = 2;
-  while (existentes.indexOf(slug) > -1) { slug = base + '-' + i; i++; }
-  sheet.appendRow([slug, empresa, new Date(), 'Enviado', '', link || '']);
-  return { slug: slug };
+  if (last < 2) return jsonOut_({ ok: true, respostas: [] });
+
+  var idCol = HEADERS.indexOf('id');
+  var empresaCol = HEADERS.indexOf('empresaNome');
+  var nomeCol = HEADERS.indexOf('respNome');
+  var tsCol = HEADERS.indexOf('timestamp');
+
+  var values = sheet.getRange(2, 1, last - 1, HEADERS.length).getValues();
+  var lista = values.map(function (r) {
+    return {
+      id: r[idCol],
+      empresaNome: r[empresaCol],
+      respNome: r[nomeCol],
+      timestamp: r[tsCol] instanceof Date ? r[tsCol].toISOString() : r[tsCol]
+    };
+  }).reverse(); // mais recentes primeiro
+
+  return jsonOut_({ ok: true, respostas: lista });
 }
 
-function listarConvites_() {
-  var sheet = getConvitesSheet_();
+// resposta completa (todos os campos) — usada pela resposta.html
+function doGetResposta_(e) {
+  checarSenha_(e);
+  var id = (e.parameter.id || '').toString();
+  var sheet = getSheet_();
   var last = sheet.getLastRow();
-  if (last < 2) return [];
-  var values = sheet.getRange(2, 1, last - 1, CONVITES_HEADERS.length).getValues();
-  return values.map(function (r) {
-    var o = {};
-    CONVITES_HEADERS.forEach(function (h, i) { o[h] = r[i] instanceof Date ? r[i].toISOString() : r[i]; });
-    return o;
-  }).reverse();
-}
+  if (last < 2) return jsonOut_({ ok: false });
 
-function buscarConvitePorSlug_(slug) {
-  if (!slug) return null;
-  var sheet = getConvitesSheet_();
-  var last = sheet.getLastRow();
-  if (last < 2) return null;
-  var values = sheet.getRange(2, 1, last - 1, CONVITES_HEADERS.length).getValues();
+  var idCol = HEADERS.indexOf('id');
+  var values = sheet.getRange(2, 1, last - 1, HEADERS.length).getValues();
   for (var i = 0; i < values.length; i++) {
-    if (values[i][0] === slug) return { row: i + 2, empresa: values[i][1], status: values[i][3] };
+    if (values[i][idCol] === id) {
+      var obj = {};
+      HEADERS.forEach(function (h, j) {
+        var v = values[i][j];
+        obj[h] = v instanceof Date ? v.toISOString() : v;
+      });
+      return jsonOut_({ ok: true, resposta: obj });
+    }
   }
-  return null;
-}
-
-function marcarRespondido_(slug) {
-  var found = buscarConvitePorSlug_(slug);
-  if (!found) return;
-  var sheet = getConvitesSheet_();
-  sheet.getRange(found.row, 4).setValue('Respondido');
-  sheet.getRange(found.row, 5).setValue(new Date());
+  return jsonOut_({ ok: false });
 }
 
 /* ---------- Sheet (Respostas) ---------- */
@@ -200,20 +153,20 @@ function getSheet_() {
   return sheet;
 }
 
-// idempotente: cria o cabeçalho do zero, ou completa colunas novas no final
-// (sem nunca deslocar colunas já existentes) se o schema crescer com o tempo.
+// idempotente: cria o cabeçalho do zero, estende colunas novas no final
+// (sem nunca deslocar colunas já existentes) e resincroniza os rótulos —
+// seguro rodar sempre, mesmo que o schema tenha crescido desde a instalação.
 function ensureHeader_(sheet) {
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(HEADERS);
     formatarPlanilha_(sheet);
     return;
   }
-  var atuais = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  if (atuais.length < HEADERS.length) {
-    var faltando = HEADERS.slice(atuais.length);
-    sheet.getRange(1, atuais.length + 1, 1, faltando.length).setValues([faltando]);
-    formatarPlanilha_(sheet);
-  }
+  var atuaisLen = sheet.getLastColumn();
+  var cresceu = atuaisLen < HEADERS.length;
+  if (cresceu) sheet.insertColumnsAfter(atuaisLen, HEADERS.length - atuaisLen);
+  sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
+  if (cresceu) formatarPlanilha_(sheet);
 }
 
 var COLUMN_WIDTHS = {
@@ -224,7 +177,7 @@ var COLUMN_WIDTHS = {
   concorrentes: 220, diferenciais: 220, concorrentesFrente: 220,
   personalidade: 260, personalidadeTop3: 200, linguagemEvitar: 200, naoQuerVer: 200,
   identidadeVisual: 220, referenciasVisuais: 220, conteudoArquivos: 220,
-  pastaDrive: 200, infoAdicional: 260, slug: 160
+  pastaDrive: 200, infoAdicional: 260, id: 220
 };
 
 // Visual "Apollo": faixas em laranja, cabeçalho fixo, colunas com largura pensada
